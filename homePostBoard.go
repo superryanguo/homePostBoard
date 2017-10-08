@@ -42,11 +42,13 @@ func init() {
 }
 func rootHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "RequestURI: %s\n", r.RequestURI)
-	fmt.Fprintf(w, "RequestBody: %s\n", r.Body)
+	fmt.Fprintf(w, "RequestRemoteAddr: %s\n", r.RemoteAddr)
+	fmt.Fprintf(w, "RequestHeader: %s\n", r.Header)
 }
 func main() {
-	http.Handle("/static/", http.FileServer(http.Dir("public")))
+	defer database.Close()
 	http.HandleFunc("/", rootHandler)
+	http.Handle("/static/", http.FileServer(http.Dir("public")))
 	log.Print("Running the server on port 8091.")
 	log.Fatal(http.ListenAndServe(":8091", nil))
 }
