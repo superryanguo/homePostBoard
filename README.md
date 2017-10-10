@@ -1,7 +1,7 @@
 # homePostBoard
 [![Build Status](https://travis-ci.org/superryanguo/homePostBoard.svg?branch=master)](https://travis-ci.org/superryanguo/homePostBoard)
-A web app to help you to build your post board for your family member@home, share info, add e-tips and record something.
 ## Introduction
+A web app to help you to build your post board for your family member@home, share info, add e-tips and record something.
 ### DB dependency
 on Ubuntu:
 ```
