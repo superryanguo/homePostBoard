@@ -2,7 +2,7 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 
@@ -41,12 +41,36 @@ func init() {
 	}
 }
 func rootHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "RequestURI: %s\n", r.RequestURI)
-	fmt.Fprintf(w, "RequestRemoteAddr: %s\n", r.RemoteAddr)
-	fmt.Fprintf(w, "RequestHeader: %s\n", r.Header)
+	// fmt.Fprintf(w, "RequestURI: %s\n", r.RequestURI)
+	// fmt.Fprintf(w, "RequestRemoteAddr: %s\n", r.RemoteAddr)
+	// fmt.Fprintf(w, "RequestHeader: %s\n", r.Header)
+	p := PostData{UId: 1, UserName: "Ryan", Content: "The First post from Ryan", Created: "20171010"}
+	t, err := template.ParseFiles("./templates/board.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	err = t.Execute(w, p)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+func addPostHandler(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("./templates/addpost.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	err = t.Execute(w, nil)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 func main() {
 	defer database.Close()
+	http.HandleFunc("/addpost/", addPostHandler)
 	http.HandleFunc("/", rootHandler)
 	http.Handle("/static/", http.FileServer(http.Dir("public")))
 	log.Print("Running the server on port 8091.")
