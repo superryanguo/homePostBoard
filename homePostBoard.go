@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -44,18 +45,33 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 	// fmt.Fprintf(w, "RequestURI: %s\n", r.RequestURI)
 	// fmt.Fprintf(w, "RequestRemoteAddr: %s\n", r.RemoteAddr)
 	// fmt.Fprintf(w, "RequestHeader: %s\n", r.Header)
-	p := PostData{UId: 1, UserName: "Ryan", Content: "The First post from Ryan", Created: "20171010"}
-	t, err := template.ParseFiles("./templates/board.html")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if r.Method == "GET" {
+		p := PostData{UId: 1, UserName: "Ryan", Content: "The First post from Ryan", Created: "20171010"}
+		t, err := template.ParseFiles("./templates/board.html")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		err = t.Execute(w, p)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	} else if r.Method == "POST" {
+		err = r.ParseForm()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		fmt.Fprintf(w, "RequestBody: %s\n", r.Form["body"])
+
+	} else {
+		http.Error(w, "Unknown HTTP Action", http.StatusInternalServerError)
 		return
-	}
-	err = t.Execute(w, p)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+
 	}
 }
+
 func addPostHandler(w http.ResponseWriter, r *http.Request) {
 	t, err := template.ParseFiles("./templates/addpost.html")
 	if err != nil {
