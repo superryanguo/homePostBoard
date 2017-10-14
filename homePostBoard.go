@@ -2,11 +2,13 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"time"
 
+	"github.com/gorilla/sessions"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -23,6 +25,7 @@ type PostContext struct {
 
 var database *sql.DB
 var err error
+var Store = sessions.NewCookieStore([]byte("hpb"))
 
 func (p *PostData) WriteDb() {
 	stmt, err := database.Prepare("INSERT INTO postdata(username, content, created) VALUES(?,?,?)")
@@ -44,6 +47,7 @@ func (p *PostData) WriteDb() {
 	log.Printf("ID = %d, affected = %d\n", lastId, rowCnt)
 }
 func init() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	database, err =
 		sql.Open("sqlite3", "./postData.db")
 	if err != nil {
@@ -98,28 +102,61 @@ func showPostBoard(pattern string, w http.ResponseWriter) (err error) {
 	}
 	return
 }
+
+//IsAct will check if the user has an active session and return True
+func IsAct(r *http.Request) bool {
+	session, _ := Store.Get(r, "session")
+	if session.Values["act"] == "true" {
+		return true
+	}
+	return false
+}
 func rootHandler(w http.ResponseWriter, r *http.Request) {
 	// fmt.Fprintf(w, "RequestURI: %s\n", r.RequestURI)
 	// fmt.Fprintf(w, "RequestRemoteAddr: %s\n", r.RemoteAddr)
 	// fmt.Fprintf(w, "RequestHeader: %s\n", r.Header)
 	if r.Method == "GET" {
+		session, _ := Store.Get(r, "session")
+		// if err != nil {
+		// 	log.Fatal(err)
+		// }
+
+		if session.Values["act"] != "true" {
+			session.Values["act"] = "true"
+			err = session.Save(r, w)
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Println("write the session data")
+		}
+
 		err = showPostBoard("*", w)
 		if err != nil {
 			log.Fatal(err)
 		}
 	} else if r.Method == "POST" {
-		err = r.ParseForm()
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		t := time.Now().Format("2006-01-02 15:04:05")
-		p := PostData{UserName: "guo", Content: r.Form["body"][0], Created: t}
-		p.WriteDb()
-
-		err = showPostBoard("*", w)
+		session, err := Store.Get(r, "session")
 		if err != nil {
 			log.Fatal(err)
+		}
+		if session.Values["act"] == "true" {
+			err = r.ParseForm()
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			t := time.Now().Format("2006-01-02 15:04:05")
+			p := PostData{UserName: "guo", Content: r.Form["body"][0], Created: t}
+			p.WriteDb()
+
+			err = showPostBoard("*", w)
+			if err != nil {
+				log.Fatal(err)
+			}
+			// session.Values["username"] = username
+		} else {
+			fmt.Println("the session is not active go to root")
+			http.Redirect(w, r, "/", 302)
 		}
 	} else {
 		http.Error(w, "Unknown HTTP Action", http.StatusInternalServerError)
@@ -140,6 +177,7 @@ func addPostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
 func main() {
 	defer database.Close()
 	http.HandleFunc("/addpost/", addPostHandler)

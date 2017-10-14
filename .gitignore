@@ -1,5 +1,6 @@
 # Binaries for programs and plugins
 homePostBoard
+postData.db
 *.exe
 *.dll
 *.so
