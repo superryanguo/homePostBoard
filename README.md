@@ -11,7 +11,9 @@ on Mac:
 ```
 brew install sqlite3
 ```
-##TODO
+## TODO
 - Add Photo Wall Function
+- Interested UserName
+- One Admin who can del post
 ## License
 GNU Lesser General Public License v3.0

@@ -1,11 +1,14 @@
 package main
 
 import (
+	"crypto/md5"
 	"database/sql"
 	"fmt"
 	"html/template"
+	"io"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -112,12 +115,17 @@ func IsAct(r *http.Request) bool {
 	}
 	return false
 }
+func tokenCreate() string {
+	ct := time.Now().Unix()
+	h := md5.New()
+	io.WriteString(h, strconv.FormatInt(ct, 10))
+	token := fmt.Sprintf("%x", h.Sum(nil))
+	fmt.Println("token created :", token)
+	return token
+}
 func rootHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		session, _ := Store.Get(r, "session")
-		// if err != nil {
-		// 	log.Fatal(err)
-		// }
 
 		if session.Values["act"] != "true" {
 			session.Values["act"] = "true"
@@ -143,6 +151,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
+
 			t := time.Now().Format("2006-01-02 15:04:05")
 			n := strings.Split(r.RemoteAddr, ":")[0] + "-" + strings.TrimLeft(strings.Fields(r.UserAgent())[1], "(")
 			uname := strings.TrimRight(n, ";")
@@ -155,6 +164,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 				log.Fatal(err)
 			}
 			// session.Values["username"] = username
+
 		} else {
 			fmt.Println("the session is not active go to root")
 			http.Redirect(w, r, "/", 302)
@@ -167,18 +177,52 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func addPostHandler(w http.ResponseWriter, r *http.Request) {
-	t, err := template.ParseFiles("./templates/addpost.html")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	err = t.Execute(w, nil)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
+	if r.Method == "GET" {
+		t, err := template.ParseFiles("./templates/addpost.html")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		token := tokenCreate()
+		expiration := time.Now().Add(365 * 24 * time.Hour)
+		cookie := http.Cookie{Name: "csrftoken", Value: token, Expires: expiration}
+		http.SetCookie(w, &cookie)
+		err = t.Execute(w, token)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	} else if r.Method == "POST" {
+		err = r.ParseForm()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		//
+		formToken := template.HTMLEscapeString(r.Form.Get("CSRFToken"))
+		cookie, err := r.Cookie("csrftoken")
+		if err != nil {
+			log.Print(err)
+			return
+		}
+		if formToken == cookie.Value {
 
+			t := time.Now().Format("2006-01-02 15:04:05")
+			n := strings.Split(r.RemoteAddr, ":")[0] + "-" + strings.TrimLeft(strings.Fields(r.UserAgent())[1], "(")
+			uname := strings.TrimRight(n, ";")
+			// fmt.Println("uanme =", uname)
+			p := PostData{UserName: uname, Content: r.Form["body"][0], Created: t}
+			p.WriteDb()
+		} else {
+			log.Print("form token mismatch")
+		}
+		http.Redirect(w, r, "/", 302)
+	} else {
+		log.Print("Unknown request")
+		http.Redirect(w, r, "/", 302)
+	}
+
+}
 func main() {
 	defer database.Close()
 	http.HandleFunc("/addpost/", addPostHandler)
