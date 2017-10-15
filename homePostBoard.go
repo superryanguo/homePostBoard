@@ -1,4 +1,4 @@
-package main
+package homepostboard
 
 import (
 	"crypto/md5"
@@ -120,7 +120,7 @@ func tokenCreate() string {
 	h := md5.New()
 	io.WriteString(h, strconv.FormatInt(ct, 10))
 	token := fmt.Sprintf("%x", h.Sum(nil))
-	fmt.Println("token created :", token)
+	// fmt.Println("token created :", token)
 	return token
 }
 func rootHandler(w http.ResponseWriter, r *http.Request) {
@@ -176,7 +176,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func addPostHandler(w http.ResponseWriter, r *http.Request) {
+func AddPostHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		t, err := template.ParseFiles("./templates/addpost.html")
 		if err != nil {
@@ -225,7 +225,7 @@ func addPostHandler(w http.ResponseWriter, r *http.Request) {
 }
 func main() {
 	defer database.Close()
-	http.HandleFunc("/addpost/", addPostHandler)
+	http.HandleFunc("/addpost/", AddPostHandler)
 	http.HandleFunc("/", rootHandler)
 	http.Handle("/static/", http.FileServer(http.Dir("public")))
 	log.Print("Running the server on port 8091.")

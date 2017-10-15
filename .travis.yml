@@ -3,6 +3,7 @@ language: go
 go:
   - 1.8
   - 1.9
+  - tip
 
 env:
   - TBD=TBD
@@ -12,4 +13,4 @@ before_install:
   - go get github.com/gorilla/sessions
 
 script:
-  - go build
+  - go test -cpu=1,2 -v
