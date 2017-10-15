@@ -11,5 +11,7 @@ on Mac:
 ```
 brew install sqlite3
 ```
+##TODO
+- Add Photo Wall Function
 ## License
 GNU Lesser General Public License v3.0

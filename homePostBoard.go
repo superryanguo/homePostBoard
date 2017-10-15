@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gorilla/sessions"
@@ -112,9 +113,6 @@ func IsAct(r *http.Request) bool {
 	return false
 }
 func rootHandler(w http.ResponseWriter, r *http.Request) {
-	// fmt.Fprintf(w, "RequestURI: %s\n", r.RequestURI)
-	// fmt.Fprintf(w, "RequestRemoteAddr: %s\n", r.RemoteAddr)
-	// fmt.Fprintf(w, "RequestHeader: %s\n", r.Header)
 	if r.Method == "GET" {
 		session, _ := Store.Get(r, "session")
 		// if err != nil {
@@ -146,7 +144,10 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			t := time.Now().Format("2006-01-02 15:04:05")
-			p := PostData{UserName: "guo", Content: r.Form["body"][0], Created: t}
+			n := strings.Split(r.RemoteAddr, ":")[0] + "-" + strings.TrimLeft(strings.Fields(r.UserAgent())[1], "(")
+			uname := strings.TrimRight(n, ";")
+			// fmt.Println("uanme =", uname)
+			p := PostData{UserName: uname, Content: r.Form["body"][0], Created: t}
 			p.WriteDb()
 
 			err = showPostBoard("*", w)
