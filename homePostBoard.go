@@ -1,4 +1,4 @@
-package homepostboard
+package main
 
 import (
 	"crypto/md5"
@@ -27,7 +27,20 @@ type PostContext struct {
 	Context []PostData
 }
 
+type PhotoData struct {
+	UId  int
+	Pos  int
+	Size string
+	Note string
+	Name string
+}
+type PhotoAlbum struct {
+	Title string
+	Album []PhotoData
+}
+
 var database *sql.DB
+
 var err error
 var Store = sessions.NewCookieStore([]byte("hpb"))
 
@@ -58,7 +71,7 @@ func init() {
 		log.Fatal(err)
 	}
 
-	sql_table := `
+	sql_PostTable := `
     CREATE TABLE IF NOT EXISTS postdata(
         uid INTEGER PRIMARY KEY AUTOINCREMENT,
         username VARCHAR(64) NULL,
@@ -66,7 +79,20 @@ func init() {
         created DATE NULL
     );
     `
-	_, err := database.Exec(sql_table)
+	sql_PhotoTable := `
+    CREATE TABLE IF NOT EXISTS photodata(
+        uid INTEGER PRIMARY KEY AUTOINCREMENT,
+        pos INTEGER NULL,
+        size VARCHAR(10) NULL,
+        note VARCHAR(64) NULL,
+        name VARCHAR(3000) NULL
+    );
+    `
+	_, err = database.Exec(sql_PostTable)
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = database.Exec(sql_PhotoTable)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -124,6 +150,7 @@ func tokenCreate() string {
 	return token
 }
 func rootHandler(w http.ResponseWriter, r *http.Request) {
+	//var err error
 	if r.Method == "GET" {
 		session, _ := Store.Get(r, "session")
 
@@ -176,7 +203,34 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func AddPhotoHandler(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("./templates/addphoto.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	err = t.Execute(w, nil)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+}
+func PhotoWallHandler(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("./templates/photoWall.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	err = t.Execute(w, nil)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+}
 func AddPostHandler(w http.ResponseWriter, r *http.Request) {
+	//var err error
 	if r.Method == "GET" {
 		t, err := template.ParseFiles("./templates/addpost.html")
 		if err != nil {
@@ -226,8 +280,10 @@ func AddPostHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	defer database.Close()
 	http.HandleFunc("/addpost/", AddPostHandler)
+	http.HandleFunc("/addphoto/", AddPhotoHandler)
+	http.HandleFunc("/photowall/", PhotoWallHandler)
 	http.HandleFunc("/", rootHandler)
-	http.Handle("/static/", http.FileServer(http.Dir("public")))
+	http.Handle("/files/", http.FileServer(http.Dir("files")))
 	log.Print("Running the server on port 8091.")
 	log.Fatal(http.ListenAndServe(":8091", nil))
 }

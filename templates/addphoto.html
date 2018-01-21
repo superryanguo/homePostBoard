@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+<h1>Upload your photo</h1>
+</head>
+<body>
+            <div class="modal-body">
+                <form enctype="multipart/form-data" action="/photowall/" method="POST">
+                    <div class="form-group">
+					<input type="text" name="title" class="form-control" id="add-note-title" placeholder="PhotoTitle" />
+                        <br>
+                        <a id="toggleAddFileGrp">Add Photo</a>
+                        <span id="file-group" class="hidden">
+                            File: <input type="file" name="uploadfile" />
+                        </span>
+                        <br> Size:
+                        <input type="radio" name="priority" value="3" /> Large
+                        <input type="radio" name="priority" value="2" /> Medium
+                        <input type="radio" name="priority" value="1" /> Small
+						<br> PhotoPosition:
+                        <input type="radio" name="pos" value="1" /> 1
+                        <input type="radio" name="pos" value="2" /> 2
+                        <input type="radio" name="pos" value="3" /> 3
+                        <input type="radio" name="pos" value="4" /> 4
+                        <input type="radio" name="pos" value="5" /> 5
+                        <input type="radio" name="pos" value="6" /> 6
+                        <input type="radio" name="pos" value="7" /> 7
+                        <input type="radio" name="pos" value="8" /> 8
+                        <input type="radio" name="pos" value="9" /> 9
+                        <input type="radio" name="pos" value="10" /> 10
+                        <input type="radio" name="pos" value="11" /> 11
+                        <input type="radio" name="pos" value="12" /> 12
+                        <input type="radio" name="pos" value="13" /> 13
+                        <br>
+                    </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+                <input type="submit" value="Submit" class="btn btn-primary" id="addNoteBtn" />
+            </div>
+            </form>
+        </div>
+</body>
+</html>

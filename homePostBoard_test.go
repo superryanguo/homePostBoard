@@ -1,4 +1,4 @@
-package homepostboard
+package main
 
 import (
 	"net/http"
