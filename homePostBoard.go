@@ -44,24 +44,29 @@ var database *sql.DB
 var err error
 var Store = sessions.NewCookieStore([]byte("hpb"))
 
-func (p *PostData) WriteDb() {
+func (p *PostData) WriteDb() error {
 	stmt, err := database.Prepare("INSERT INTO postdata(username, content, created) VALUES(?,?,?)")
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
+		return err
 	}
 	res, err := stmt.Exec(p.UserName, p.Content, p.Created)
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
+		return err
 	}
 	lastId, err := res.LastInsertId()
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
+		return err
 	}
 	rowCnt, err := res.RowsAffected()
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
+		return err
 	}
 	log.Printf("ID = %d, affected = %d\n", lastId, rowCnt)
+	return err
 }
 func init() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
@@ -97,9 +102,58 @@ func init() {
 		log.Fatal(err)
 	}
 }
+func delPostdata(sqlstr string) error {
+	//stmt, err = db.Prepare("delete from userinfo where uid=?")
+	stmt, err := database.Prepare(sqlstr)
+	if err != nil {
+		log.Print(err)
+		return err
+	}
+
+	res, err := stmt.Exec()
+	if err != nil {
+		log.Print(err)
+		return err
+	}
+
+	affect, err := res.RowsAffected()
+	if err != nil {
+		log.Print(err)
+		return err
+	}
+
+	fmt.Println(affect)
+
+	return err
+}
+
+func findPostdata(sqlstr string) ([]PostData, error) {
+	var s []PostData
+	rows, err := database.Query(sqlstr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var uid int
+	var username string
+	var content string
+	var created string
+
+	for rows.Next() {
+		err = rows.Scan(&uid, &username, &content, &created)
+		if err != nil {
+			log.Fatal(err)
+		}
+		p := PostData{UId: uid, UserName: username, Content: content, Created: created}
+		s = append(s, p)
+	}
+
+	rows.Close()
+
+	return s, err
+}
 func showPostBoard(pattern string, w http.ResponseWriter) (err error) {
 	sqlStr := "SELECT " + pattern + " FROM postdata"
-	rows, err := database.Query(sqlStr)
+	/*rows, err := database.Query(sqlStr)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -119,7 +173,13 @@ func showPostBoard(pattern string, w http.ResponseWriter) (err error) {
 	}
 
 	rows.Close()
-
+	*/
+	var c PostContext
+	c.Context, err = findPostdata(sqlStr)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	t, err := template.ParseFiles("./templates/board.html")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -184,7 +244,10 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 			uname := strings.TrimRight(n, ";")
 			// fmt.Println("uanme =", uname)
 			p := PostData{UserName: uname, Content: r.Form["body"][0], Created: t}
-			p.WriteDb()
+			err = p.WriteDb()
+			if err != nil {
+				log.Fatal(err)
+			}
 
 			err = showPostBoard("*", w)
 			if err != nil {
