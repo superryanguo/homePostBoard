@@ -22,6 +22,21 @@ func TestAddPostHandler(t *testing.T) {
 	}
 }
 
+func TestRootHandler(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(rootHandler))
+	defer ts.Close()
+	req, err := http.NewRequest("GET", ts.URL, nil)
+	if err != nil {
+		t.Errorf("Error occured while constructing request: %s", err)
+	}
+
+	w := httptest.NewRecorder()
+	rootHandler(w, req)
+	if w.Code != http.StatusOK {
+		t.Errorf("Actual status: (%d); Expected status:(%d)", w.Code, http.StatusOK)
+	}
+}
+
 //TestInitTableDatabase is to make sure the data table structure is right
 func TestInitTableDataBase(t *testing.T) {
 	sqlStr := "select name from sqlite_master where type='table' order by name;"
