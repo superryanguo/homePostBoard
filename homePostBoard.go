@@ -41,7 +41,6 @@ type PhotoAlbum struct {
 
 var database *sql.DB
 
-var err error
 var Store = sessions.NewCookieStore([]byte("hpb"))
 
 func (p *PostData) WriteDb() error {
@@ -70,10 +69,12 @@ func (p *PostData) WriteDb() error {
 }
 func init() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	database, err =
+	//the := can't be used for er
+	var er error
+	database, er =
 		sql.Open("sqlite3", "./postData.db")
-	if err != nil {
-		log.Fatal(err)
+	if er != nil {
+		log.Fatal(er)
 	}
 
 	sql_PostTable := `
@@ -93,13 +94,13 @@ func init() {
         name VARCHAR(3000) NULL
     );
     `
-	_, err = database.Exec(sql_PostTable)
-	if err != nil {
-		log.Fatal(err)
+	_, er = database.Exec(sql_PostTable)
+	if er != nil {
+		log.Fatal(er)
 	}
-	_, err = database.Exec(sql_PhotoTable)
-	if err != nil {
-		log.Fatal(err)
+	_, er = database.Exec(sql_PhotoTable)
+	if er != nil {
+		log.Fatal(er)
 	}
 }
 func delPostdata(sqlstr string) error {
@@ -151,25 +152,24 @@ func findPostdata(sqlstr string) ([]PostData, error) {
 
 	return s, e
 }
-func showPostBoard(pattern string, w http.ResponseWriter) (err error) {
+func showPostBoard(pattern string, w http.ResponseWriter) error {
 	sqlStr := "SELECT " + pattern + " FROM postdata"
-	var c PostContext
-	c.Context, err = findPostdata(sqlStr)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	cc, e := findPostdata(sqlStr)
+	if e != nil {
+		http.Error(w, e.Error(), http.StatusInternalServerError)
+		return e
 	}
-	t, err := template.ParseFiles("./templates/board.html")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	t, e := template.ParseFiles("./templates/board.html")
+	if e != nil {
+		http.Error(w, e.Error(), http.StatusInternalServerError)
+		return e
 	}
-	err = t.Execute(w, c)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	e = t.Execute(w, PostContext{Context: cc})
+	if e != nil {
+		http.Error(w, e.Error(), http.StatusInternalServerError)
+		return e
 	}
-	return
+	return e
 }
 
 //IsAct will check if the user has an active session and return True
