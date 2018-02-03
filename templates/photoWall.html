@@ -2,28 +2,30 @@
 <html>  
 <head>  
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">  
-<title>{{.PhotoWallName}}</title>  
-<link href="wallStyle.css" rel="stylesheet" type="text/css" />  
+{{ if .}}
+  <title>{{.Title}}</title>  
+  <link href="wallStyle.css" rel="stylesheet" type="text/css" />  
 </head>  
 <body>  
-<div class="photo-album">  
-    <h1><span>Angel <abbr title="and" class="amp">&</abbr> {{.PhotoWallName}}</span></h1>          
-    <a href="./images/1.jpg" class="large polaroid img1"><img src="./images/1_small.jpg" alt="" />This breathtaking volcanic lake is at Wai-O-Tapu Thermal Wonderland</a>  
-    <a href="./images/2.jpg" class="polaroid img2"><img src="./images/2_small.jpg" alt="" />This lovely waterfall was at Rotorua in Rainbow Springs</a>  
-    <a href="./images/3.jpg" class="small polaroid img3"><img src="./images/3_small.jpg" alt="" />Ferntastic</a>          
-    <a href="./images/10.jpg" class="medium polaroid img4"><img src="./images/10_small.jpg" alt="" />At Kaikoura we went whale watching!</a>          
-    <a href="./images/5.jpg" class="polaroid img5"><img src="./images/5_small.jpg" alt="" />Found this little cutie on a walk in New Zealand!</a>      
-    <a href="./images/6.jpg" class="polaroid img6"><img src="./images/6_small.jpg" alt="" />An amazing bubbling volcanic spring, a bit muddy</a>          
-    <a href="./images/7.jpg" class="polaroid img7"><img src="./images/7_small.jpg" alt="" />Simon in a giant Kiwi, pretending to be a Kiwi (the bird)</a>  
-    <a href="./images/8.jpg" class="small polaroid img8"><img src="./images/8_small.jpg" alt="" />Albatross in Dunedin</a>  
-    <a href="./images/9.jpg" class="medium polaroid img9"><img src="./images/9_small.jpg" alt="" />White water rafting in Queenstown</a>  
-    <a href="./images/4.jpg" class="polaroid img10"><img src="./images/4_small.jpg" alt="" />White Island</a>  
-    <a href="./images/11.jpg" class="small polaroid img11"><img src="./images/11_small.jpg" alt="" />Sulphurous</a>  
-    <a href="./images/12.jpg" class="small polaroid img12"><img src="./images/12_small.jpg" alt="" />Sea lions!</a>  
-    <a href="./images/13.jpg" class="small polaroid img13"><img src="./images/13_small.jpg" alt="" />Horse riding</a>  
-    <a href="./images/14.jpg" class="small polaroid img14"><img src="./images/14_small.jpg" alt="" />Stewart Island</a>  
-    <a href="./images/15.jpg" class="polaroid img15"><img src="./images/15_small.jpg" alt="" />Us in a blue cave on the Franz Josef glacier</a>  
-</div>  
+ <div>
+    <h1><span>Angel <abbr title="and" class="amp">&</abbr> {{.Title}}</span></h1>          
+     {{ if .Album}} 
+        {{range .Album}}
+        <div class="photo-album">  
+         <a href="./images/{{.Name}}" class="{{.Size}} polaroid img{{.Pos}}"><img src="./images/{{.Name}}" alt="" />{{.Note}}</a>  
+        </div>
+        {{end}} 
+     {{else}}
+      <div class="note">
+        <p class="noteHeading">No PhotoAlbum Data</p>
+      </div>
+     {{end}}
+ </div>  
 </body>  
+{{else}}
+    <div class="note">
+       <p class="noteHeading">No Photo Data</p>
+    </div>
+{{end}}
 <p>[<a href="/addphoto/">AddPhoto</a>]</p>
-</html>  
+</html>

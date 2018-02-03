@@ -34,6 +34,10 @@ type PhotoData struct {
 	Note string
 	Name string
 }
+
+//TODO:the title shold be set in the photowall page
+//you can just update it with the name you want, make
+//it simple here
 type PhotoAlbum struct {
 	Title string
 	Album []PhotoData
@@ -82,7 +86,7 @@ func init() {
         uid INTEGER PRIMARY KEY AUTOINCREMENT,
         username VARCHAR(64) NULL,
         content VARCHAR(3000) NULL,
-        created DATE NULL
+        created VARCHAR(64) NULL
     );
     `
 	sql_PhotoTable := `
