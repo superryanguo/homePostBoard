@@ -45,28 +45,28 @@ var err error
 var Store = sessions.NewCookieStore([]byte("hpb"))
 
 func (p *PostData) WriteDb() error {
-	stmt, err := database.Prepare("INSERT INTO postdata(username, content, created) VALUES(?,?,?)")
-	if err != nil {
-		log.Print(err)
-		return err
+	stmt, e := database.Prepare("INSERT INTO postdata(username, content, created) VALUES(?,?,?)")
+	if e != nil {
+		log.Print(e)
+		return e
 	}
-	res, err := stmt.Exec(p.UserName, p.Content, p.Created)
-	if err != nil {
-		log.Print(err)
-		return err
+	res, e := stmt.Exec(p.UserName, p.Content, p.Created)
+	if e != nil {
+		log.Print(e)
+		return e
 	}
-	lastId, err := res.LastInsertId()
-	if err != nil {
-		log.Print(err)
-		return err
+	lastId, e := res.LastInsertId()
+	if e != nil {
+		log.Print(e)
+		return e
 	}
-	rowCnt, err := res.RowsAffected()
-	if err != nil {
-		log.Print(err)
-		return err
+	rowCnt, e := res.RowsAffected()
+	if e != nil {
+		log.Print(e)
+		return e
 	}
 	log.Printf("ID = %d, affected = %d\n", lastId, rowCnt)
-	return err
+	return e
 }
 func init() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
@@ -103,35 +103,35 @@ func init() {
 	}
 }
 func delPostdata(sqlstr string) error {
-	//stmt, err = db.Prepare("delete from userinfo where uid=?")
-	stmt, err := database.Prepare(sqlstr)
-	if err != nil {
-		log.Print(err)
-		return err
+	//stmt, e = db.Prepare("delete from userinfo where uid=?")
+	stmt, e := database.Prepare(sqlstr)
+	if e != nil {
+		log.Print(e)
+		return e
 	}
 
-	res, err := stmt.Exec()
-	if err != nil {
-		log.Print(err)
-		return err
+	res, e := stmt.Exec()
+	if e != nil {
+		log.Print(e)
+		return e
 	}
 
-	affect, err := res.RowsAffected()
-	if err != nil {
-		log.Print(err)
-		return err
+	affect, e := res.RowsAffected()
+	if e != nil {
+		log.Print(e)
+		return e
 	}
 
 	fmt.Println(affect)
 
-	return err
+	return e
 }
 
 func findPostdata(sqlstr string) ([]PostData, error) {
 	var s []PostData
-	rows, err := database.Query(sqlstr)
-	if err != nil {
-		log.Fatal(err)
+	rows, e := database.Query(sqlstr)
+	if e != nil {
+		log.Fatal(e)
 	}
 	var uid int
 	var username string
@@ -139,9 +139,9 @@ func findPostdata(sqlstr string) ([]PostData, error) {
 	var created string
 
 	for rows.Next() {
-		err = rows.Scan(&uid, &username, &content, &created)
-		if err != nil {
-			log.Fatal(err)
+		e = rows.Scan(&uid, &username, &content, &created)
+		if e != nil {
+			log.Fatal(e)
 		}
 		p := PostData{UId: uid, UserName: username, Content: content, Created: created}
 		s = append(s, p)
@@ -149,31 +149,10 @@ func findPostdata(sqlstr string) ([]PostData, error) {
 
 	rows.Close()
 
-	return s, err
+	return s, e
 }
 func showPostBoard(pattern string, w http.ResponseWriter) (err error) {
 	sqlStr := "SELECT " + pattern + " FROM postdata"
-	/*rows, err := database.Query(sqlStr)
-	if err != nil {
-		log.Fatal(err)
-	}
-	var c PostContext
-	var uid int
-	var username string
-	var content string
-	var created string
-
-	for rows.Next() {
-		err = rows.Scan(&uid, &username, &content, &created)
-		if err != nil {
-			log.Fatal(err)
-		}
-		p := PostData{UId: uid, UserName: username, Content: content, Created: created}
-		c.Context = append(c.Context, p)
-	}
-
-	rows.Close()
-	*/
 	var c PostContext
 	c.Context, err = findPostdata(sqlStr)
 	if err != nil {
@@ -210,32 +189,32 @@ func tokenCreate() string {
 	return token
 }
 func rootHandler(w http.ResponseWriter, r *http.Request) {
-	//var err error
+	var e error
 	if r.Method == "GET" {
 		session, _ := Store.Get(r, "session")
 
 		if session.Values["act"] != "true" {
 			session.Values["act"] = "true"
-			err = session.Save(r, w)
-			if err != nil {
-				log.Fatal(err)
+			e = session.Save(r, w)
+			if e != nil {
+				log.Fatal(e)
 			}
 			fmt.Println("write the session data")
 		}
 
-		err = showPostBoard("*", w)
-		if err != nil {
-			log.Fatal(err)
+		e = showPostBoard("*", w)
+		if e != nil {
+			log.Print(e)
 		}
 	} else if r.Method == "POST" {
-		session, err := Store.Get(r, "session")
-		if err != nil {
-			log.Fatal(err)
+		session, e := Store.Get(r, "session")
+		if e != nil {
+			log.Fatal(e)
 		}
 		if session.Values["act"] == "true" {
-			err = r.ParseForm()
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+			e = r.ParseForm()
+			if e != nil {
+				http.Error(w, e.Error(), http.StatusInternalServerError)
 				return
 			}
 
@@ -244,14 +223,14 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 			uname := strings.TrimRight(n, ";")
 			// fmt.Println("uanme =", uname)
 			p := PostData{UserName: uname, Content: r.Form["body"][0], Created: t}
-			err = p.WriteDb()
-			if err != nil {
-				log.Fatal(err)
+			e = p.WriteDb()
+			if e != nil {
+				log.Print(e)
 			}
 
-			err = showPostBoard("*", w)
-			if err != nil {
-				log.Fatal(err)
+			e = showPostBoard("*", w)
+			if e != nil {
+				log.Print(e)
 			}
 			// session.Values["username"] = username
 
@@ -267,59 +246,59 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func AddPhotoHandler(w http.ResponseWriter, r *http.Request) {
-	t, err := template.ParseFiles("./templates/addphoto.html")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	t, e := template.ParseFiles("./templates/addphoto.html")
+	if e != nil {
+		http.Error(w, e.Error(), http.StatusInternalServerError)
 		return
 	}
-	err = t.Execute(w, nil)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	e = t.Execute(w, nil)
+	if e != nil {
+		http.Error(w, e.Error(), http.StatusInternalServerError)
 		return
 	}
 
 }
 func PhotoWallHandler(w http.ResponseWriter, r *http.Request) {
-	t, err := template.ParseFiles("./templates/photoWall.html")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	t, e := template.ParseFiles("./templates/photoWall.html")
+	if e != nil {
+		http.Error(w, e.Error(), http.StatusInternalServerError)
 		return
 	}
-	err = t.Execute(w, nil)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	e = t.Execute(w, nil)
+	if e != nil {
+		http.Error(w, e.Error(), http.StatusInternalServerError)
 		return
 	}
 
 }
 func AddPostHandler(w http.ResponseWriter, r *http.Request) {
-	//var err error
+	var e error
 	if r.Method == "GET" {
-		t, err := template.ParseFiles("./templates/addpost.html")
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		t, e := template.ParseFiles("./templates/addpost.html")
+		if e != nil {
+			http.Error(w, e.Error(), http.StatusInternalServerError)
 			return
 		}
 		token := tokenCreate()
 		expiration := time.Now().Add(365 * 24 * time.Hour)
 		cookie := http.Cookie{Name: "csrftoken", Value: token, Expires: expiration}
 		http.SetCookie(w, &cookie)
-		err = t.Execute(w, token)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		e = t.Execute(w, token)
+		if e != nil {
+			http.Error(w, e.Error(), http.StatusInternalServerError)
 			return
 		}
 	} else if r.Method == "POST" {
-		err = r.ParseForm()
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		e = r.ParseForm()
+		if e != nil {
+			http.Error(w, e.Error(), http.StatusInternalServerError)
 			return
 		}
 		//
 		formToken := template.HTMLEscapeString(r.Form.Get("CSRFToken"))
-		cookie, err := r.Cookie("csrftoken")
-		if err != nil {
-			log.Print(err)
+		cookie, e := r.Cookie("csrftoken")
+		if e != nil {
+			log.Print(e)
 			return
 		}
 		if formToken == cookie.Value {
