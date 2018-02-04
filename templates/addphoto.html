@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-<h1>Upload your photo</h1>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">  
+<link href="/templates/wallStyle.css" rel="stylesheet" type="text/css" />  
+ <h1>Upload your photo</h1>
 </head>
 <body>
             <div class="modal-body">
-                <form enctype="multipart/form-data" action="/photowall/" method="POST">
+                <form enctype="multipart/form-data" action="/addphoto/" method="POST">
                     <div class="form-group">
 					<input type="text" name="title" class="form-control" id="add-note-title" placeholder="PhotoTitle" />
                         <br>
@@ -37,6 +39,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
                 <input type="submit" value="Submit" class="btn btn-primary" id="addNoteBtn" />
+                <input type="button" value="Cancel" onclick="history.back()" />
             </div>
             </form>
         </div>

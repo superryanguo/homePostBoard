@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -250,17 +251,52 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func AddPhotoHandler(w http.ResponseWriter, r *http.Request) {
-	t, e := template.ParseFiles("./templates/addphoto.html")
-	if e != nil {
-		http.Error(w, e.Error(), http.StatusInternalServerError)
-		return
+	var e error
+	fmt.Println("the r.methond is", r.Method)
+	if r.Method == "GET" {
+		t, e := template.ParseFiles("./templates/addphoto.html")
+		if e != nil {
+			http.Error(w, e.Error(), http.StatusInternalServerError)
+			return
+		}
+		e = t.Execute(w, nil)
+		if e != nil {
+			http.Error(w, e.Error(), http.StatusInternalServerError)
+			return
+		}
+	} else if r.Method == "POST" {
+		e = r.ParseForm()
+		if e != nil {
+			http.Error(w, e.Error(), http.StatusInternalServerError)
+			return
+		}
+		file, handler, e := r.FormFile("uploadfile")
+		if e != nil {
+			http.Error(w, e.Error(), http.StatusInternalServerError)
+			return
+		}
+		if handler != nil {
+			r.ParseMultipartForm(32 << 20) //defined maximum size of file
+			defer file.Close()
+			f, e := os.OpenFile("./files/images/"+handler.Filename, os.O_WRONLY|os.O_CREATE, 0666)
+			if e != nil {
+				log.Println(e)
+				return
+			}
+			defer f.Close()
+			io.Copy(f, file)
+			fmt.Println("upload a file done!")
+			//filelink := "<br> <a href=./files/" + handler.Filename + ">" + handler.Filename + "</a>"
+		}
+		//n := strings.Split(r.RemoteAddr, ":")[0] + "-" + strings.TrimLeft(strings.Fields(r.UserAgent())[1], "(")
+		//uname := strings.TrimRight(n, ";")
+		//p := PostData{UserName: uname, Content: r.Form["body"][0], Created: t}
+		//p.WriteDb()
+		http.Redirect(w, r, "/photowall", 302)
+	} else {
+		log.Print("Unknown request")
+		http.Redirect(w, r, "/photowall", 302)
 	}
-	e = t.Execute(w, nil)
-	if e != nil {
-		http.Error(w, e.Error(), http.StatusInternalServerError)
-		return
-	}
-
 }
 func PhotoWallHandler(w http.ResponseWriter, r *http.Request) {
 	t, e := template.ParseFiles("./templates/photoWall.html")
@@ -329,7 +365,8 @@ func main() {
 	http.HandleFunc("/addphoto/", AddPhotoHandler)
 	http.HandleFunc("/photowall/", PhotoWallHandler)
 	http.HandleFunc("/", rootHandler)
-	http.Handle("/files/", http.FileServer(http.Dir("files")))
+	http.Handle("/templates/", http.StripPrefix("/templates/", http.FileServer(http.Dir("./templates"))))
+	http.Handle("/files/", http.StripPrefix("/files/", http.FileServer(http.Dir("./files"))))
 	log.Print("Running the server on port 8091.")
 	log.Fatal(http.ListenAndServe(":8091", nil))
 }

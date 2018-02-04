@@ -218,3 +218,23 @@ body {
     a:focus {  
         z-index: 5;  
     }  
+
+.modal-footer {
+  padding: 10px 15px 16px;
+  margin: 0;
+  border: none;
+}
+
+.modal-body {
+  padding: 20px 20px 11px 20px;
+}
+
+.modal {
+  overflow: hidden;
+}
+
+  .btn-primary {
+    width: auto;
+  }
+
+
