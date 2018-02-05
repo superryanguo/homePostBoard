@@ -278,7 +278,11 @@ func AddPhotoHandler(w http.ResponseWriter, r *http.Request) {
 		if handler != nil {
 			r.ParseMultipartForm(32 << 20) //defined maximum size of file
 			defer file.Close()
-			f, e := os.OpenFile("./files/images/"+handler.Filename, os.O_WRONLY|os.O_CREATE, 0666)
+			rand := md5.New()
+			io.WriteString(rand, strconv.FormatInt(time.Now().Unix(), 10))
+			io.WriteString(rand, handler.Filename)
+			tkn := fmt.Sprintf("%x", rand.Sum(nil))
+			f, e := os.OpenFile("./files/images/"+tkn, os.O_WRONLY|os.O_CREATE, 0666)
 			if e != nil {
 				log.Println(e)
 				return
