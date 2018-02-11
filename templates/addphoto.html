@@ -8,7 +8,7 @@
 <body>
             <div class="modal-body">
                 <form enctype="multipart/form-data" action="/addphoto/" method="POST">
-                    <div class="form-group">
+                   <div class="form-group">
 					<input type="text" name="title" class="form-control" id="add-note-title" placeholder="PhotoTitle" />
                         <br>
                         <a id="toggleAddFileGrp">Add Photo</a>
@@ -16,9 +16,11 @@
                             File: <input type="file" name="uploadfile" />
                         </span>
                         <br> Size:
-                        <input type="radio" name="priority" value="3" /> Large
-                        <input type="radio" name="priority" value="2" /> Medium
-                        <input type="radio" name="priority" value="1" /> Small
+                        <select name="size">
+                        <option value="large">Large</option>
+                        <option value="medium">Medium</option>
+                        <option value="small">Small</option>
+                        </select>
 						<br> PhotoPosition:
                         <input type="radio" name="pos" value="1" /> 1
                         <input type="radio" name="pos" value="2" /> 2
@@ -35,9 +37,8 @@
                         <input type="radio" name="pos" value="13" /> 13
                         <br>
                     </div>
-            </div>
+            <div>Add notes:<textarea name="note" rows="2" cols="80"></textarea></div> 
             <div class="modal-footer">
-                <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
                 <input type="submit" value="Submit" class="btn btn-primary" id="addNoteBtn" />
                 <input type="button" value="Cancel" onclick="history.back()" />
             </div>

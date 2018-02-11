@@ -45,6 +45,7 @@ type PhotoAlbum struct {
 }
 
 var database *sql.DB
+var AlbumTitle string
 
 var Store = sessions.NewCookieStore([]byte("hpb"))
 
@@ -70,6 +71,30 @@ func (p *PostData) WriteDb() error {
 		return e
 	}
 	log.Printf("ID = %d, affected = %d\n", lastId, rowCnt)
+	return e
+}
+func (p *PhotoData) WriteDb() error {
+	stmt, e := database.Prepare("INSERT INTO photodata(pos, size, note, name) VALUES(?,?,?,?)")
+	if e != nil {
+		log.Print(e)
+		return e
+	}
+	res, e := stmt.Exec(p.Pos, p.Size, p.Note, p.Name)
+	if e != nil {
+		log.Print(e)
+		return e
+	}
+	lastId, e := res.LastInsertId()
+	if e != nil {
+		log.Print(e)
+		return e
+	}
+	rowCnt, e := res.RowsAffected()
+	if e != nil {
+		log.Print(e)
+		return e
+	}
+	log.Printf("Photodata ID = %d, affected = %d\n", lastId, rowCnt)
 	return e
 }
 func init() {
@@ -252,6 +277,12 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 
 func AddPhotoHandler(w http.ResponseWriter, r *http.Request) {
 	var e error
+	/*if r.Body != nil {
+		defer r.Body.Close()
+		result, _ := ioutil.ReadAll(r.Body)
+		fmt.Printf("%s\n", result)
+	}
+	*/
 	fmt.Println("the r.methond is", r.Method)
 	if r.Method == "GET" {
 		t, e := template.ParseFiles("./templates/addphoto.html")
@@ -265,6 +296,7 @@ func AddPhotoHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else if r.Method == "POST" {
+		var p PhotoData
 		e = r.ParseForm()
 		if e != nil {
 			http.Error(w, e.Error(), http.StatusInternalServerError)
@@ -290,12 +322,14 @@ func AddPhotoHandler(w http.ResponseWriter, r *http.Request) {
 			defer f.Close()
 			io.Copy(f, file)
 			fmt.Println("upload a file done!")
-			//filelink := "<br> <a href=./files/" + handler.Filename + ">" + handler.Filename + "</a>"
+			AlbumTitle = template.HTMLEscapeString(r.Form.Get("title"))
+			p.Note = template.HTMLEscapeString(r.Form.Get("note"))
+			p.Pos, _ = strconv.Atoi(template.HTMLEscapeString(r.Form.Get("pos")))
+			p.Size = template.HTMLEscapeString(r.FormValue("size"))
+			p.Name = tkn
+			fmt.Printf("title:=%s,p=%v\n", AlbumTitle, p)
 		}
-		//n := strings.Split(r.RemoteAddr, ":")[0] + "-" + strings.TrimLeft(strings.Fields(r.UserAgent())[1], "(")
-		//uname := strings.TrimRight(n, ";")
-		//p := PostData{UserName: uname, Content: r.Form["body"][0], Created: t}
-		//p.WriteDb()
+		p.WriteDb()
 		http.Redirect(w, r, "/photowall", 302)
 	} else {
 		log.Print("Unknown request")
