@@ -3,20 +3,19 @@
 <head>  
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">  
   <link href="/templates/wallStyle.css" rel="stylesheet" type="text/css" />  
-    <a href="/files/images/i.jpg" class="polaroid img2"><img src="/files/images/65397bcce0e16f60470f83cabcf6241c" alt="" />This lovely waterfall was at Rotorua in Rainbow Springs</a>  
 {{ if .}}
   <title>{{.Title}}</title>  
   <link href="/templates/wallStyle.css" rel="stylesheet" type="text/css" />  
 </head>  
 <body>  
  <div>
-    <h1><span>Angel <abbr title="and" class="amp">&</abbr> {{.Title}}</span></h1>          
+    <h1><span><abbr title="and" class="amp"></abbr> {{.Title}}</span></h1>
      {{ if .Album}} 
-        {{range .Album}}
         <div class="photo-album">  
-         <a href="./images/{{.Name}}" class="{{.Size}} polaroid img{{.Pos}}"><img src="./images/{{.Name}}" alt="" />{{.Note}}</a>  
-        </div>
+        {{range .Album}}
+         <a href="/files/images/{{.Name}}" class="{{.Size}} polaroid img{{.Pos}}"><img src="/files/images/{{.Name}}" alt="" />{{.Note}}</a>  
         {{end}} 
+        </div>
      {{else}}
       <div class="note">
         <p class="noteHeading">No PhotoAlbum Data</p>

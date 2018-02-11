@@ -74,27 +74,64 @@ func (p *PostData) WriteDb() error {
 	return e
 }
 func (p *PhotoData) WriteDb() error {
-	stmt, e := database.Prepare("INSERT INTO photodata(pos, size, note, name) VALUES(?,?,?,?)")
+	//the pos should be unique, so use the update way
+	var e error
+	sql := "SELECT * FROM photodata WHERE pos = ?"
+	rows, e := database.Query(sql, p.Pos)
 	if e != nil {
-		log.Print(e)
-		return e
+		log.Fatal(e)
 	}
-	res, e := stmt.Exec(p.Pos, p.Size, p.Note, p.Name)
-	if e != nil {
-		log.Print(e)
-		return e
+	if rows.Next() {
+		//update
+		rows.Close()
+		fmt.Println("now updating the pos", p.Pos)
+		stmt, e := database.Prepare("update photodata set name=? where pos=?")
+		if e != nil {
+			log.Print(e)
+			return e
+		}
+
+		res, e := stmt.Exec(p.Name, p.Pos)
+		if e != nil {
+			log.Print(e)
+			return e
+		}
+
+		affect, e := res.RowsAffected()
+		if e != nil {
+			log.Print(e)
+			return e
+		}
+
+		fmt.Println("updating", affect)
+
+	} else {
+		//insert
+		fmt.Println("now adding the pos", p.Pos)
+		rows.Close()
+		stmt, e := database.Prepare("INSERT INTO photodata(pos, size, note, name) VALUES(?,?,?,?)")
+		if e != nil {
+			log.Print(e)
+			return e
+		}
+		res, e := stmt.Exec(p.Pos, p.Size, p.Note, p.Name)
+		if e != nil {
+			log.Print(e)
+			return e
+		}
+		lastId, e := res.LastInsertId()
+		if e != nil {
+			log.Print(e)
+			return e
+		}
+		rowCnt, e := res.RowsAffected()
+		if e != nil {
+			log.Print(e)
+			return e
+		}
+		log.Printf("Photodata ID = %d, affected = %d\n", lastId, rowCnt)
+
 	}
-	lastId, e := res.LastInsertId()
-	if e != nil {
-		log.Print(e)
-		return e
-	}
-	rowCnt, e := res.RowsAffected()
-	if e != nil {
-		log.Print(e)
-		return e
-	}
-	log.Printf("Photodata ID = %d, affected = %d\n", lastId, rowCnt)
 	return e
 }
 func init() {
@@ -158,6 +195,31 @@ func delPostdata(sqlstr string) error {
 	return e
 }
 
+func findPhotodata(sqlstr string) ([]PhotoData, error) {
+	var pd []PhotoData
+	rows, e := database.Query(sqlstr)
+	if e != nil {
+		log.Fatal(e)
+	}
+	var uid int
+	var pos int
+	var size string
+	var note string
+	var name string
+
+	for rows.Next() {
+		e = rows.Scan(&uid, &pos, &size, &note, &name)
+		if e != nil {
+			log.Fatal(e)
+		}
+		p := PhotoData{UId: uid, Pos: pos, Size: size, Note: note, Name: name}
+		pd = append(pd, p)
+	}
+
+	rows.Close()
+
+	return pd, e
+}
 func findPostdata(sqlstr string) ([]PostData, error) {
 	var s []PostData
 	rows, e := database.Query(sqlstr)
@@ -202,6 +264,27 @@ func showPostBoard(pattern string, w http.ResponseWriter) error {
 	return e
 }
 
+func showPhotoWall(pattern string, w http.ResponseWriter) error {
+	sqlStr := "SELECT " + pattern + " FROM photodata"
+	cc, e := findPhotodata(sqlStr)
+	if e != nil {
+		http.Error(w, e.Error(), http.StatusInternalServerError)
+		return e
+	}
+	t, e := template.ParseFiles("./templates/photoWall.html")
+	if e != nil {
+		http.Error(w, e.Error(), http.StatusInternalServerError)
+		return e
+	}
+	e = t.Execute(w, PhotoAlbum{Title: AlbumTitle, Album: cc})
+	if e != nil {
+		http.Error(w, e.Error(), http.StatusInternalServerError)
+		return e
+	}
+	return e
+}
+
+//IsAct will check if the user has an active session and return True
 //IsAct will check if the user has an active session and return True
 func IsAct(r *http.Request) bool {
 	session, _ := Store.Get(r, "session")
@@ -322,7 +405,11 @@ func AddPhotoHandler(w http.ResponseWriter, r *http.Request) {
 			defer f.Close()
 			io.Copy(f, file)
 			fmt.Println("upload a file done!")
-			AlbumTitle = template.HTMLEscapeString(r.Form.Get("title"))
+
+			t := template.HTMLEscapeString(r.Form.Get("title"))
+			if t != "" {
+				AlbumTitle = t
+			}
 			p.Note = template.HTMLEscapeString(r.Form.Get("note"))
 			p.Pos, _ = strconv.Atoi(template.HTMLEscapeString(r.Form.Get("pos")))
 			p.Size = template.HTMLEscapeString(r.FormValue("size"))
@@ -337,16 +424,21 @@ func AddPhotoHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func PhotoWallHandler(w http.ResponseWriter, r *http.Request) {
-	t, e := template.ParseFiles("./templates/photoWall.html")
+	e := showPhotoWall("*", w)
 	if e != nil {
-		http.Error(w, e.Error(), http.StatusInternalServerError)
-		return
+		log.Print(e)
 	}
-	e = t.Execute(w, nil)
-	if e != nil {
-		http.Error(w, e.Error(), http.StatusInternalServerError)
-		return
-	}
+	/*
+		t, e := template.ParseFiles("./templates/photoWall.html")
+		if e != nil {
+			http.Error(w, e.Error(), http.StatusInternalServerError)
+			return
+		}
+		e = t.Execute(w, nil)
+		if e != nil {
+			http.Error(w, e.Error(), http.StatusInternalServerError)
+			return
+		}*/
 
 }
 func AddPostHandler(w http.ResponseWriter, r *http.Request) {
